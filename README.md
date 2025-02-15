@@ -1,14 +1,14 @@
-Full CI/CD flow on kubernetes.
+###Full CI/CD flow on kubernetes.
 
 Step 1. Build the k8s cluster.
 
 Step2. clone repo for jenkisn and sonar and apply.
 
-Step3. Access jenkins over nodeport and with port defined in service
+Step3. Access jenkins over nodeport and with port defined in service.
 kubectl get svc -n devops-tools
 
-Step4. Access sonarqube over nodeport
-kubectl get svc -n devops-tools
+Step4. Access sonarqube over nodeport.
+#kubectl get svc -n devops-tools
 
 Step5- Get ready with below credentials and tokens
 
@@ -88,3 +88,9 @@ kubectl create -f argocd-application.yaml
 
 
 Step11. Run CI pipeline , it will update your deployment repo with new image , once a commit is there in deployemnt repo , argocd will sync changes to application
+
+
+
+Repositories:
+1. https://github.com/chankyswami/Diamond-Carat-Calculator.git
+2. https://github.com/chankyswami/Diamond-Carat-Calculator-deployment.git
