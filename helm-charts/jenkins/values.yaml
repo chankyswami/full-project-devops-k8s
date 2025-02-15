@@ -1,0 +1,46 @@
+namespace:
+  name: devops-tools
+
+storageClass:
+  name: local-storage
+
+persistentVolume:
+  name: jenkins-pv
+  capacity: 5Gi
+  hostPath: /mnt/data1/jenkins
+
+persistentVolumeClaim:
+  name: jenkins-pv-claim
+  namespace: devops-tools
+  storage: 5Gi
+  storageClassName: local-storage
+
+serviceAccount:
+  name: jenkins
+  namespace: devops-tools
+
+secret:
+  name: jenkins-sa-token
+  serviceAccountName: jenkins
+  namespace: devops-tools
+
+clusterRole:
+  name: jenkins-clusterrole
+
+clusterRoleBinding:
+  name: jenkins-clusterrolebinding
+  serviceAccountName: jenkins
+  namespace: devops-tools
+  clusterRoleName: jenkins-clusterrole
+
+service:
+  name: jenkins
+  namespace: devops-tools
+  ports:
+    http:
+      nodePort: 30489
+     
+deployment:
+  name: jenkins
+  namespace: devops-tools
+  replicas: 1

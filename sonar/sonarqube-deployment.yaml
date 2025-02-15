@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarqube
+  namespace: devops-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarqube
+  template:
+    metadata:
+      labels:
+        app: sonarqube
+    spec:
+      securityContext:
+        fsGroup: 999
+      initContainers:
+        - name: init-permissions
+          image: busybox
+          command: [ "sh", "-c", "chown -R 999:999 /opt/sonarqube/data" ]
+          securityContext:
+            runAsUser: 0  # Runs as root to set permissions
+          volumeMounts:
+            - mountPath: "/opt/sonarqube/data"
+              name: sonarqube-data
+      containers:
+        - name: sonarqube
+          image: sonarqube:lts-community
+          securityContext:
+            runAsUser: 999  # Runs SonarQube as non-root
+          ports:
+            - containerPort: 9000
+          env:
+            - name: SONAR_ES_BOOTSTRAP_CHECKS_DISABLE
+              value: "true"
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+            limits:
+              memory: "3Gi"
+              cpu: "1"
+          volumeMounts:
+            - mountPath: "/opt/sonarqube/data"
+              name: sonarqube-data
+      volumes:
+        - name: sonarqube-data
+          persistentVolumeClaim:
+            claimName: sonarqube-pvc
+
