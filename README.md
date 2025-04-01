@@ -71,7 +71,7 @@ kubectl config use-context docker-desktop
 kubectl config use-context kubernetes-admin@kubernetes
 
 
-Crds needs to be installe on target k8s cluster
+Crds needs to be installed on target k8s cluster
 kubectl apply -k https://github.com/argoproj/argo-cd/manifests/crds\?ref\=stable
 
 kubectl get crds | grep applications
