@@ -28,7 +28,7 @@ Docker cred with username and password
 Step6. Create above credentials in jenkins credentials store with the same ID name if defined in jenkinsfile of CI repo.
 
 Step7. Create sonar webhook for sending quality gate status to jenkins
-
+URL- http://jenkins.devops-tools.svc.cluster.local/sonarqube-webhook
 
 
 Step8. Install argocd (a seperate cluster)
