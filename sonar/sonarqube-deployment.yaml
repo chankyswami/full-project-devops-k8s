@@ -48,4 +48,5 @@ spec:
         - name: sonarqube-data
           persistentVolumeClaim:
             claimName: sonarqube-pvc
-
+      nodeSelector:
+        kubernetes.io/hostname: kworker1

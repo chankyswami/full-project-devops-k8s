@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -49,3 +48,5 @@ spec:
         - name: jenkins-data
           persistentVolumeClaim:
             claimName: jenkins-pv-claim
+      nodeSelector:
+        kubernetes.io/hostname: kworker1

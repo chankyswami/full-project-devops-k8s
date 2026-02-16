@@ -9,7 +9,7 @@ Prerequisites:
 6. GitHub access token
 
 Note: 
-Target Cluster is : k8s cluster running on VirtualBox an that is our cluster for application hosting.
+Target Cluster is : k8s cluster running on VirtualBox and that is our cluster for application hosting.
 Docker Desktop Custer: Kubernetes cluster used for Argocd installation and setup.
 
 
@@ -28,18 +28,18 @@ Argocd CRDs needs to be installed on target k8s cluster
 # kubectl apply -k https://github.com/argoproj/argo-cd/manifests/crds\?ref\=stable
 # kubectl get crds | grep applications
 
-On target cluster run
+On target cluster(k8s cluster) run
 # kubectl create ns argocd 
 (This namespace is required on both source and target to get the status of sync)
 
 Create dockerHub(registry) secret on target cluster for jnlp container.
+# kubectl create ns devops-tools
 # kubectl create secret docker-registry docker-credentials \
   --docker-server=https://index.docker.io/v1/ \
   --docker-username=xxxx \
   --docker-password=xxxxx \
   --docker-email=xxxxx \
   -n devops-tools
-
 
 
 Step-2 Install argocd (a seperate cluster) on Docker Desktop.
@@ -90,25 +90,55 @@ Cluster 'https://172.16.16.100:6443' added
 # argocd cluster list
 
 
-Step-3: Setup Jenkins
+Step-3. Apply Jenkins and SonarQube deployment
 
-On Local machine clone repo for Jenkins and Sonar and deploy
-
+# kubectl config use-context kubernetes-admin@kubernetes
+Clone repo for Jenkins and Sonar and deploy on k8s cluster(virtualbox one)
 # kubectl create -f jenkins/ 
-# kubectl get svc -n devops-tools
-Get the nodeport and access jenkins over browser i.e, http://172.16.16.100:30489
+# kubectl create -f sonar/
 
-Get initial password- 
+Step-4. Setup SonarQube
+
+# kubectl get svc -n devops-tools
+Open browser and access http://172.16.16.100:30157(Port as per above command output)
+
+Create webhook on sonarqube for jenkins for acknowledgement of sonargate
+Go to  Administration --> Configuration --> Webhook
+
+Create sonar token for analysis:
+Click on A(administratr) -->My account-->Security-->create token (global analysis)
+
+Enter
+Name --> Your choice
+URL  --> http://jenkins.devops-tools.svc.cluster.local:8080/sonarqube-webhook/
+Secret --> Leave it blank
+
+
+Step-5: Setup Jenkins
+
+
+# kubectl get svc -n devops-tools
+Get the nodeport and access jenkins and sonar over browser i.e, http://172.16.16.100:30489
+
+Get initial password of jenkins- 
 # kubectl exec -it -n devops-tools deploy/jenkins -- cat //var/jenkins_home/secrets/initialAdminPassword
 
 Enter Initial password
 Install suggested plugins
 
-Setup your user account
+Setup your user account 
 
 Now Go to manage jenkins --> Plugins -->Available plugins
 Install "kubernetes" plugin
 Install "sonarqube scannar"
+
+
+Credentials needs to create in jenkins cred store -- 
+1. sonar-token (Give ID is as per my jenkinsfile)
+Create token in sonarqube ---->Click on A(administratr) -->My account-->Security-->create token (global analysis)
+
+2. jenkins-token-github (Give ID as per my jenkinsfile)
+3. dockerhub-username-password (Give ID as per my jenkinsfile)
 
 Go to Manage jenkins --> system --> SonarQube Servers
 Name- sonar (same what you given in jeninsfile)
@@ -124,27 +154,7 @@ Jenkins URl --> http://jenkins.devops-tools.svc.cluster.local:8080 (Cluster inte
 Jenkins Tunnel --> jenkins.devops-tools.svc.cluster.local:50000 (For jnlp agent communication)
 
 
-Credentials needs to create -- 
-1. sonar-token (This ID is as per my jenkinsfile)
-2. jenkins-token-github (This ID  is as per my jenkinsfile)
-3. dockerhub-username-password (This ID is as per my jenkinsfile)
-
-
-Step-4. Setup SonarQube
-# kubectl get svc -n devops-tools
-Open browser and access http://172.16.16.100:30157(Port as per above command output)
-
-Create webhook on sonarqube for jenkins for acknowledgement of sonargate
-Go to  Administration --> Configuration --> Webhook
-
-Enter
-Name --> Your choice
-URL  --> http://jenkins.devops-tools.svc.cluster.local:8080/sonarqube-webhook/
-Secret --> Leave it blank
-
-
-
-Step- 5. Repository Setup:
+Step- 6. Repository Setup:
 1. Actual application repository (https://github.com/chankyswami/Diamond-Carat-Calculator.git)
 Consists your application code and the jenkinsfile
 
@@ -160,5 +170,167 @@ Place manifests like above here or helm chart for application deployment (jenkin
 # kubectl create -f argocd-application.yaml
 
 
-Step- 6. Create a pipeline job in jenkins with scm(git), branch name is "chanky". Save it
+Step- 7. Create a pipeline job in jenkins with scm(git), branch name is "chanky". Save it
 Run CI pipeline , it will update your deployment repo with new image tag , once a commit is there in deployemnt repo , argocd will sync changes to application.
+
+
+Step-8. Current context of deployment(gfj-frontend):
+Service exposed over "clusterIP"
+So now how to access it from your laptop:
+
+########################################################
+
+Expose clusterIP svc via ingress only(tested)
+  
+Laptop
+  ↓
+Ingress (NodePort internally)
+  ↓
+ClusterIP Service (gfj-frontend)
+  ↓
+Pods
+
+
+# kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/baremetal/deploy.yaml
+
+# kubectl get pods -n ingress-nginx
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gfj-frontend-ingress
+  namespace: gfj-app
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: gfj.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gfj-frontend
+            port:
+              number: 80
+# kubectl apply -f ingress.yaml
+
+# kubectl get nodes -o wide
+
+Edit /etc/hosts (Linux / Mac) or C:\Windows\System32\drivers\etc\hosts:
+192.168.56.101   gfj.local
+
+
+http://gfj.local:31256(ingress controller port as it is exposed on nodeport)
+
+#####################################################################
+Expose clusterIP svc via metalB and ingress without port (tested)
+
+Your nodes are on range:
+172.16.16.0/24
+
+Step 1. Pick unused IPs (outside DHCP range).
+I picked 172.16.16.105-172.16.16.110
+
+STEP 2: Install MetalLB
+# kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.5/config/manifests/metallb-native.yaml
+
+# kubectl get pods -n metallb-system
+
+controller Running
+speaker Running
+
+
+STEP 3: Configure MetalLB IP pool
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: gfj-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 172.16.16.105-172.16.16.110
+---
+apiVersion: metallb.io/v1beta1You should see:
+kind: L2Advertisement
+metadata:
+  name: gfj-l2
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - gfj-pool
+
+
+# kubectl apply -f metallb-config.yaml
+
+STEP 4: Convert Ingress Controller to LoadBalancer
+# kubectl patch svc ingress-nginx-controller \
+  -n ingress-nginx \
+  -p '{"spec":{"type":"LoadBalancer"}}'
+
+
+# kubectl get svc -n ingress-nginx
+You should see:
+EXTERNAL-IP: 172.16.16.240
+PORT(S): 80:xxxx/TCP, 443:yyyy/TCP
+
+
+STEP 5: Update /etc/hosts of laptop (windows or linux)
+172.16.16.105 gfj-dev.company.com
+
+# sudo systemd-resolve --flush-caches   -----if needed
+
+From browser---http://gfj-dev.company.com
+##########################################################################################
+SSL/TLS implemented and tested
+
+OPTION 1: Self-Signed Certificate (Dev / Lab / Interview Demo)
+Step 1: Generate cert & key on your laptop or a node
+# openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout key.pem \
+  -out cert.pem \
+  -subj "/CN=gfj-dev.company.com"
+
+This creates:
+key.pem   → private key
+cert.pem  → public certificate
+
+
+Step 2: Create TLS secret in Kubernetes
+# kubectl create secret tls gfj-tls \
+  -n gfj-app \
+  --cert=cert.pem \
+  --key=key.pem
+
+# kubectl describe secret gfj-tls -n gfj-app
+
+
+Step:3 Update ingress object
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gfj-frontend-ingress
+  namespace: gfj-app
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - gfj-dev.company.com
+    secretName: gfj-tls
+  rules:
+  - host: gfj-dev.company.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gfj-frontend
+            port:
+              number: 80
+			  
+Step4: now access
+https://gfj-dev.company.com
+
+##################################################################
