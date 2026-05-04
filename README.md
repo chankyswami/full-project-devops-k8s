@@ -25,7 +25,7 @@ Copy content of "/etc/kubernetes/admin.conf"
 Install kubectl cli on windows(Google it and install)
 
 Argocd CRDs needs to be installed on target k8s cluster
-# kubectl apply -k https://github.com/argoproj/argo-cd/manifests/crds\?ref\=stable
+# kubectl create -k https://github.com/argoproj/argo-cd/manifests/crds\?ref\=stable
 # kubectl get crds | grep applications
 
 On target cluster(k8s cluster) run
@@ -155,23 +155,22 @@ Jenkins Tunnel --> jenkins.devops-tools.svc.cluster.local:50000 (For jnlp agent 
 
 
 Step- 6. Repository Setup:
-1. Actual application repository (https://github.com/chankyswami/Diamond-Carat-Calculator.git)
-Consists your application code and the jenkinsfile
+1. Actual application repository (https://github.com/chankyswami/gfj-frontend.git).
+Consists your application code and the jenkinsfile. It is being used for CI purpose.
 
-2. ArgoCD Deployment repository (https://github.com/chankyswami/Diamond-Carat-Calculator-deployment.git)
-Maintaing 3 files as of now:
-argocd-app.yaml
-deployment.yaml
-service.yaml
+2. Helm chart repository (https://github.com/chankyswami/gfj-frontend-deployment.git).
+Maintaining helm chart and values.yaml file.
 
-Place manifests like above here or helm chart for application deployment (jenkinsfile stage will update image name either in values.yaml of helm chart or in deployment.yaml)
 
-3. Deploy your application first time by running
+3. ArgoCD application repo (https://github.com/chankyswami/argocd-apps.git).
+Consists all the applications being deployed by argocd.
 # kubectl create -f argocd-application.yaml
 
 
-Step- 7. Create a pipeline job in jenkins with scm(git), branch name is "chanky". Save it
-Run CI pipeline , it will update your deployment repo with new image tag , once a commit is there in deployemnt repo , argocd will sync changes to application.
+Step- 7. Create a pipeline job in jenkins with scm(git), branch name is "main". Save it
+Run CI pipeline , CI will generate a new image and will push it to dockerHub.
+
+Now ArgoCD image updated controller is monitoring DockerHUB image path for the new image tag , once it get the new tag , it will notify Argocd and update the live application.
 
 
 Step-8. Current context of deployment(gfj-frontend):
@@ -229,10 +228,34 @@ Expose clusterIP svc via metalB and ingress without port (tested)
 Your nodes are on range:
 172.16.16.0/24
 
-Step 1. Pick unused IPs (outside DHCP range).
-I picked 172.16.16.105-172.16.16.110
+Step 1. Install ingres resource ,
+
+ apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gfj-frontend-ingress
+  namespace: gfj-app
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: gfj-dev.company.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gfj-frontend
+            port:
+              number: 80
+
+Apply above file.
 
 STEP 2: Install MetalLB
+Pick unused IPs (outside DHCP range).
+I picked 172.16.16.105-172.16.16.110
 # kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.5/config/manifests/metallb-native.yaml
 
 # kubectl get pods -n metallb-system
