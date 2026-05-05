@@ -14,40 +14,50 @@ spec:
         app: jenkins
     spec:
       serviceAccountName: jenkins
+
+      # 🔒 Correct security context for Jenkins
       securityContext:
-        fsGroup: 1000
         runAsUser: 1000
+        fsGroup: 1000
+
+      # ✅ Init container ONLY fixes ownership (NOT permissions)
       initContainers:
         - name: volume-permissions
           image: busybox
-          command: ["sh", "-c", "chown -R 1000:1000 /var/jenkins_home && chmod -R 777 /var/jenkins_home && ls -ld /var/jenkins_home"]
+          command:
+            - sh
+            - -c
+            - chown -R 1000:1000 /var/jenkins_home
           securityContext:
-            runAsUser: 0  # Runs as root to change permissions
+            runAsUser: 0
           volumeMounts:
             - name: jenkins-data
               mountPath: /var/jenkins_home
+
       containers:
         - name: jenkins
-          # image: jenkins/jenkins:lts-jdk17
           image: jenkins/jenkins:2.452.3-lts-jdk21
-          resources:
-            limits:
-              memory: "2Gi"
-              cpu: "1000m"
-            requests:
-              memory: "500Mi"
-              cpu: "500m"
           ports:
             - name: httpport
               containerPort: 8080
             - name: jnlpport
               containerPort: 50000
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "500Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
           volumeMounts:
             - name: jenkins-data
               mountPath: /var/jenkins_home
+
       volumes:
         - name: jenkins-data
           persistentVolumeClaim:
             claimName: jenkins-pv-claim
+
+      # 🚨 MOST IMPORTANT FIX — PIN TO DATA NODE
       nodeSelector:
         kubernetes.io/hostname: kworker1
