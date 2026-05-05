@@ -36,9 +36,16 @@ clusterRoleBinding:
 service:
   name: jenkins
   namespace: devops-tools
+  type: ClusterIP
+
   ports:
     http:
-      nodePort: 30489
+      port: 8080
+      targetPort: 8080
+
+    jnlp:
+      port: 50000
+      targetPort: 50000
      
 deployment:
   name: jenkins
