@@ -54,3 +54,12 @@ deployment:
 
 image:
   name: jenkins/jenkins:lts-jdk21
+
+rbac:
+  clusterRoleName: jenkins-clusterrole
+  clusterRoleBindingName: jenkins-clusterrolebinding
+
+controller:
+  serviceAccount:
+    create: false
+    name: jenkins

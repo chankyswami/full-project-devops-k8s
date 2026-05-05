@@ -13,7 +13,7 @@ spec:
       labels:
         app: jenkins
     spec:
-      serviceAccountName: jenkins
+      serviceAccountName: {{ .Values.serviceAccount.name }}
       securityContext:
         fsGroup: 1000
         runAsUser: 1000
