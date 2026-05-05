@@ -28,7 +28,7 @@ spec:
 
       containers:
         - name: sonarqube
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: {{ .Values.image.name }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
             runAsUser: {{ .Values.securityContext.runAsUser }}
