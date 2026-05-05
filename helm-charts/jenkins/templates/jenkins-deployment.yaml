@@ -28,7 +28,8 @@ spec:
               mountPath: /var/jenkins_home
       containers:
         - name: jenkins
-          image: jenkins/jenkins:lts-jdk17
+          image: {{ .Values.image.name }}
+          # image: jenkins/jenkins:lts-jdk21
           resources:
             limits:
               memory: "2Gi"

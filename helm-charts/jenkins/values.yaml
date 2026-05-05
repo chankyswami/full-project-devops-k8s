@@ -44,3 +44,6 @@ deployment:
   name: jenkins
   namespace: devops-tools
   replicas: 1
+
+image:
+  name: jenkins/jenkins:lts-jdk21
