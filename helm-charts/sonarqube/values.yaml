@@ -1,0 +1,38 @@
+namespace: devops-tools
+
+replicaCount: 1
+
+image:
+  repository: sonarqube
+  tag: lts-community
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 9000
+  nodePort: 30900
+
+persistence:
+  enabled: true
+  pv:
+    name: sonarqube-pv
+    size: 10Gi
+    path: /mnt/data/sonarqube
+  pvc:
+    name: sonarqube-pvc
+    size: 10Gi
+
+resources:
+  requests:
+    memory: 2Gi
+    cpu: 500m
+  limits:
+    memory: 3Gi
+    cpu: "1"
+
+securityContext:
+  runAsUser: 999
+  fsGroup: 999
+
+nodeSelector:
+  kubernetes.io/hostname: kworker1
