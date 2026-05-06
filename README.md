@@ -94,6 +94,37 @@ Step-3. Apply Jenkins and SonarQube deployment
 
 # kubectl config use-context kubernetes-admin@kubernetes
 Clone repo for Jenkins and Sonar and deploy on k8s cluster(virtualbox one)
+
+Use either helm chart available here or mainifest in the corresponding folder.
+If using helm then,  create storage class and PV first as a prerequistte:
+##################
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+
+
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jenkins-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  hostPath:
+    path: "/mnt/data1/jenkins"
+##########################
+
+then apply helm for jenkins
+
+
 # kubectl create -f jenkins/ 
 # kubectl create -f sonar/
 
