@@ -31,7 +31,7 @@ service:
       targetPort: 50000
 
 persistentVolumeClaim:
-  enabled: false
+  enabled: true
   name: jenkins-pv-claim
   namespace: devops-tools
   storage: 5Gi
