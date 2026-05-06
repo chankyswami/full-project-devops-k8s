@@ -1,5 +1,10 @@
 namespace: devops-tools
 
+storageClass:
+  name: local-storage
+  provisioner: kubernetes.io/no-provisioner
+  volumeBindingMode: WaitForFirstConsumer
+
 serviceAccount:
   name: jenkins
   namespace: devops-tools
