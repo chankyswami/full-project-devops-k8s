@@ -1,27 +1,30 @@
-namespace: devops-tools
+namespace:
+  name: devops-tools
 
 storageClass:
   name: local-storage
-  provisioner: kubernetes.io/no-provisioner
-  volumeBindingMode: WaitForFirstConsumer
+
+persistentVolume:
+  enabled: false
+  name: jenkins-pv
+  capacity: 5Gi
+  hostPath: /mnt/data1/jenkins
+  storageClassName: local-storage
+
+persistentVolumeClaim:
+  enabled: true
+  name: jenkins-pv-claim
+  namespace: devops-tools
+  storage: 5Gi
+  storageClassName: local-storage
 
 serviceAccount:
   name: jenkins
   namespace: devops-tools
 
-clusterRole:
-  name: jenkins-clusterrole
-
-clusterRoleBinding:
-  name: jenkins-clusterrolebinding
-
-image:
-  name: jenkins/jenkins:lts-jdk21
-
-deployment:
-  name: jenkins
-  namespace: devops-tools
-  replicas: 1
+rbac:
+  clusterRoleName: jenkins-clusterrole
+  clusterRoleBindingName: jenkins-clusterrolebinding
 
 service:
   name: jenkins
@@ -34,6 +37,14 @@ service:
     jnlp:
       port: 50000
       targetPort: 50000
+
+deployment:
+  name: jenkins
+  namespace: devops-tools
+  replicas: 1
+
+image:
+  name: jenkins/jenkins:lts-jdk21
 
 controller:
   serviceAccount:
