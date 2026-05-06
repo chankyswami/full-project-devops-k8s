@@ -5,9 +5,9 @@ metadata:
   name: {{ .Values.persistentVolumeClaim.name }}
   namespace: {{ .Values.persistentVolumeClaim.namespace }}
 spec:
-  storageClassName: {{ .Values.persistentVolumeClaim.storageClassName }}
   accessModes:
     - ReadWriteOnce
+  storageClassName: {{ .Values.persistentVolumeClaim.storageClassName }}
   resources:
     requests:
       storage: {{ .Values.persistentVolumeClaim.storage }}

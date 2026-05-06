@@ -1,30 +1,22 @@
 namespace:
   name: devops-tools
 
-storageClass:
-  name: local-storage
+image:
+  name: jenkins/jenkins:lts-jdk21
 
-persistentVolume:
-  enabled: false
-  name: jenkins-pv
-  capacity: 5Gi
-  hostPath: /mnt/data1/jenkins
-  storageClassName: local-storage
-
-persistentVolumeClaim:
-  enabled: true
-  name: jenkins-pv-claim
-  namespace: devops-tools
-  storage: 5Gi
-  storageClassName: local-storage
+deployment:
+  name: jenkins
+  replicas: 1
 
 serviceAccount:
   name: jenkins
   namespace: devops-tools
 
 rbac:
-  clusterRoleName: jenkins-clusterrole
-  clusterRoleBindingName: jenkins-clusterrolebinding
+  clusterRole:
+    name: jenkins-clusterrole
+  clusterRoleBinding:
+    name: jenkins-clusterrolebinding
 
 service:
   name: jenkins
@@ -38,15 +30,9 @@ service:
       port: 50000
       targetPort: 50000
 
-deployment:
-  name: jenkins
+persistentVolumeClaim:
+  enabled: false
+  name: jenkins-pv-claim
   namespace: devops-tools
-  replicas: 1
-
-image:
-  name: jenkins/jenkins:lts-jdk21
-
-controller:
-  serviceAccount:
-    create: false
-    name: jenkins
+  storage: 5Gi
+  storageClassName: local-storage

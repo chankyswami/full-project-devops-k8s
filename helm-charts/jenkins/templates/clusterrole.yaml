@@ -1,9 +1,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ .Values.clusterRole.name }}
+  name: {{ .Values.rbac.clusterRole.name }}
 rules:
-  # Jenkins Kubernetes agents (MANDATORY)
   - apiGroups: [""]
     resources:
       - pods
@@ -12,6 +11,7 @@ rules:
       - services
       - configmaps
       - secrets
+      - namespaces
     verbs:
       - get
       - list
@@ -21,7 +21,6 @@ rules:
       - patch
       - update
 
-  # Deployments
   - apiGroups: ["apps"]
     resources:
       - deployments
@@ -36,7 +35,6 @@ rules:
       - patch
       - update
 
-  # Jobs
   - apiGroups: ["batch"]
     resources:
       - jobs
